@@ -2,20 +2,39 @@
     "name": "ws_task",
     "version": "1.0.0",
     "description": "Template for the WebSocket remote control task",
-    "main": "index.js",
+    "main": "index.ts",
     "type": "module",
     "scripts": {
-        "start": "node ./index.js",
-        "start:dev": "nodemon ./index.js",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "format": "prettier --write \"src/**/*.ts\"",
+        "start": "tsx src/index.ts",
+        "start:dev": "nodemon",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "eslint": "npx eslint . --ignore-pattern front/**"
     },
     "author": "Andrei Auchynnikau",
     "keywords": [],
     "license": "ISC",
     "devDependencies": {
-        "nodemon": "^2.0.16"
+        "nodemon": "^2.0.22",
+        "tsx": "^4.19.4",
+        "typescript": "^5.8.3"
     },
     "dependencies": {
+        "@types/node": "^22.15.18",
+        "@types/ws": "^8.18.1",
+        "@typescript-eslint/eslint-plugin": "^8.32.1",
+        "@typescript-eslint/parser": "^8.32.1",
+        "eslint": "^9.27.0",
+        "eslint-plugin-prettier": "^5.4.0",
+        "prettier": "^3.5.3",
+        "ts-node": "^10.9.2",
         "ws": "^8.8.0"
+    },
+    "nodemonConfig": {
+        "watch": [
+            "src"
+        ],
+        "ext": "ts",
+        "exec": "ts-node ./src/index.ts"
     }
 }
