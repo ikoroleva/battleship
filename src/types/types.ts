@@ -1,47 +1,47 @@
 import { WebSocket } from 'ws';
 
-type ShipKind = 'small' | 'medium' | 'large' | 'huge';
+export type ShipKind = 'small' | 'medium' | 'large' | 'huge';
 
-interface Position {
+export interface Position {
   x: number;
   y: number;
 }
 
-interface Ship {
+export interface Ship {
   position: Position;
-  direction: boolean; // true - horizontal, false - vertical
+  direction: boolean; // true - vertical, false - horizontal
   length: number;
   type: ShipKind;
   hits: number;
 }
 
-interface Player {
+export interface Player {
   name: string;
   password: string;
   socket: WebSocket | null;
   wins: number;
 }
 
-interface Room {
+export interface Room {
   roomId: string;
   players: Player[];
 }
 
-interface GamePlayerState {
+export interface GamePlayerState {
   player: Player;
   ships: Ship[];
   ready: boolean;
 }
 
-interface Game {
+export interface Game {
   gameId: string;
   players: Record<string, GamePlayerState>;
   turn: string;
   finished: boolean;
 }
 
-interface WSMessage<T = unknown> {
+export interface WSMessage {
   type: string;
-  data: T | string;
+  data: string;
   id: 0;
 }

@@ -1,71 +1,14 @@
 import { WebSocketServer } from 'ws';
+import { MessageHandler } from './MessageHandler';
 
 export const wss = new WebSocketServer({ port: 3000 });
+const handler = MessageHandler.getInstance();
 
 wss.on('connection', function connection(ws) {
   console.log('websocket connection established');
 
   ws.on('message', function incoming(message) {
-    const parsedMessage = JSON.parse(message.toString());
-    if (parsedMessage.type === 'reg') {
-      const name = JSON.parse(parsedMessage.data).name;
-      console.log(`registering ${name}`);
-      ws.send(
-        JSON.stringify({
-          type: 'reg',
-          data: JSON.stringify({
-            name: name,
-            index: 1,
-            error: false,
-            errorText: '',
-          }),
-        }),
-      );
-      ws.send(
-        JSON.stringify({
-          type: 'update_room',
-          data: JSON.stringify([
-            {
-              roomId: 1,
-              roomUsers: [
-                {
-                  name: 'Jack',
-                  index: 2,
-                },
-              ],
-            },
-            {
-              roomId: 2,
-              roomUsers: [
-                {
-                  name: 'Black',
-                  index: 3,
-                },
-              ],
-            },
-          ]),
-        }),
-      );
-
-      ws.send(
-        JSON.stringify({
-          type: 'update_winners',
-          data: JSON.stringify([
-            {
-              name: 'Jack',
-              wins: 2,
-            },
-            {
-              name: 'James',
-              wins: 3,
-            },
-          ]),
-        }),
-      );
-      return;
-    }
-
-    console.log(`received: ${message}`);
+    handler.handleMessage(ws, message.toString());
   });
 
   ws.on('close', function close() {
@@ -75,7 +18,8 @@ wss.on('connection', function connection(ws) {
   ws.send(
     JSON.stringify({
       type: 'hello',
-      data: 'wow, that works!',
+      data: 'Connection established',
+      id: 0,
     }),
   );
 });
