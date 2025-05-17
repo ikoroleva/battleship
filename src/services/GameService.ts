@@ -1,7 +1,7 @@
 import { Game, Room, Ship, Player, GamePlayerState } from '../types/types';
-import { GameRepository } from '../repositories/games';
+import { GameRepository } from '../repositories/GameRepository';
 import { PlayerService } from './PlayerService';
-import { WebSocket } from 'ws';
+import { MessageFormatter } from '../utils/MessageFormatter';
 
 export interface AttackResult {
   hit: boolean;
@@ -84,16 +84,10 @@ export class GameService {
     if (!game) return;
 
     Object.entries(game.players).forEach(([playerId, playerState]) => {
-      playerState.player.socket?.send(
-        JSON.stringify({
-          type: 'start_game',
-          data: JSON.stringify({
-            ships: playerState.ships,
-            currentPlayerIndex: playerId,
-          }),
-          id: 0,
-        }),
-      );
+      MessageFormatter.sendMessage(playerState.player.socket, 'start_game', {
+        ships: playerState.ships,
+        currentPlayerIndex: playerId,
+      });
     });
 
     this.broadcastTurn(game);
@@ -101,16 +95,10 @@ export class GameService {
 
   private notifyGameCreation(game: Game): void {
     Object.entries(game.players).forEach(([playerName, playerState]) => {
-      playerState.player.socket?.send(
-        JSON.stringify({
-          type: 'create_game',
-          data: JSON.stringify({
-            idGame: game.gameId,
-            idPlayer: playerName,
-          }),
-          id: 0,
-        }),
-      );
+      MessageFormatter.sendMessage(playerState.player.socket, 'create_game', {
+        idGame: game.gameId,
+        idPlayer: playerName,
+      });
     });
   }
 
@@ -118,33 +106,21 @@ export class GameService {
     const winner = game.players[winnerId].player;
     this.playerService.incrementPlayerWins(winner.name);
 
-    Object.values(game.players).forEach(({ player }) => {
-      player.socket?.send(
-        JSON.stringify({
-          type: 'finish',
-          data: JSON.stringify({
-            winPlayer: winnerId,
-          }),
-          id: 0,
-        }),
-      );
-    });
+    const sockets = Object.values(game.players).map(
+      ({ player }) => player.socket,
+    );
+    MessageFormatter.sendToSockets(sockets, 'finish', { winPlayer: winnerId });
 
     this.gameRepo.removeGame(game.gameId);
     this.broadcastWinnersUpdate();
   }
 
   private broadcastTurn(game: Game): void {
-    Object.values(game.players).forEach(({ player }) => {
-      player.socket?.send(
-        JSON.stringify({
-          type: 'turn',
-          data: JSON.stringify({
-            currentPlayer: game.turn,
-          }),
-          id: 0,
-        }),
-      );
+    const sockets = Object.values(game.players).map(
+      ({ player }) => player.socket,
+    );
+    MessageFormatter.sendToSockets(sockets, 'turn', {
+      currentPlayer: game.turn,
     });
   }
 
@@ -155,18 +131,13 @@ export class GameService {
     attackerId: string,
     status: 'miss' | 'killed' | 'shot',
   ): void {
-    Object.values(game.players).forEach(({ player }) => {
-      player.socket?.send(
-        JSON.stringify({
-          type: 'attack',
-          data: JSON.stringify({
-            position: { x, y },
-            currentPlayer: attackerId,
-            status,
-          }),
-          id: 0,
-        }),
-      );
+    const sockets = Object.values(game.players).map(
+      ({ player }) => player.socket,
+    );
+    MessageFormatter.sendToSockets(sockets, 'attack', {
+      position: { x, y },
+      currentPlayer: attackerId,
+      status,
     });
   }
 
@@ -176,12 +147,6 @@ export class GameService {
       wins: p.wins,
     }));
 
-    this.playerService.broadcastMessage(
-      JSON.stringify({
-        type: 'update_winners',
-        data: JSON.stringify(winnersData),
-        id: 0,
-      }),
-    );
+    this.playerService.broadcastMessage('update_winners', winnersData);
   }
 }

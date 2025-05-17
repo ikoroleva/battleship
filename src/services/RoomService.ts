@@ -1,5 +1,5 @@
 import { Room, Player } from '../types/types';
-import { RoomRepository } from '../repositories/rooms';
+import { RoomRepository } from '../repositories/RoomRepository';
 import { PlayerService } from './PlayerService';
 
 export class RoomService {
@@ -16,8 +16,20 @@ export class RoomService {
   }
 
   addPlayerToRoom(roomId: string, player: Player): Room | undefined {
-    const room = this.roomRepo.addPlayerToRoom(roomId, player);
-    return room;
+    const room = this.roomRepo.findById(roomId);
+
+    // Check if room exists
+    if (!room) {
+      return undefined;
+    }
+
+    // Check if player is already in the room
+    const isPlayerInRoom = room.players.some((p) => p.name === player.name);
+    if (isPlayerInRoom) {
+      throw new Error('Player is already in this room');
+    }
+
+    return this.roomRepo.addPlayerToRoom(roomId, player);
   }
 
   removeRoom(roomId: string): void {
@@ -47,13 +59,6 @@ export class RoomService {
   }
 
   broadcastRoomUpdate(): void {
-    const roomData = this.getRoomData();
-    this.playerService.broadcastMessage(
-      JSON.stringify({
-        type: 'update_room',
-        data: JSON.stringify(roomData),
-        id: 0,
-      }),
-    );
+    this.playerService.broadcastMessage('update_room', this.getRoomData());
   }
 }

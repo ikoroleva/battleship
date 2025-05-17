@@ -3,6 +3,7 @@ import { WSMessage } from '../types/types';
 import { PlayerService } from '../services/PlayerService';
 import { RoomService } from '../services/RoomService';
 import { GameService } from '../services/GameService';
+import { MessageFormatter } from '../utils/MessageFormatter';
 
 export class MessageHandler {
   private static instance: MessageHandler;
@@ -69,18 +70,12 @@ export class MessageHandler {
         ws,
       );
 
-      ws.send(
-        JSON.stringify({
-          type: 'reg',
-          data: JSON.stringify({
-            name: player.name,
-            index: this.playerService.getPlayerIndex(player.name),
-            error: false,
-            errorText: '',
-          }),
-          id: 0,
-        }),
-      );
+      MessageFormatter.sendMessage(ws, 'reg', {
+        name: player.name,
+        index: this.playerService.getPlayerIndex(player.name),
+        error: false,
+        errorText: '',
+      });
 
       this.roomService.broadcastRoomUpdate();
       const winnersData = this.playerService.getWinners().map((p) => ({
@@ -88,13 +83,7 @@ export class MessageHandler {
         wins: p.wins,
       }));
 
-      this.playerService.broadcastMessage(
-        JSON.stringify({
-          type: 'update_winners',
-          data: JSON.stringify(winnersData),
-          id: 0,
-        }),
-      );
+      this.playerService.broadcastMessage('update_winners', winnersData);
     } catch (error) {
       this.sendError(
         ws,
@@ -124,18 +113,25 @@ export class MessageHandler {
       return;
     }
 
-    const room = this.roomService.addPlayerToRoom(indexRoom, player);
-    if (!room) {
-      this.sendError(ws, 'Room not found');
-      return;
-    }
+    try {
+      const room = this.roomService.addPlayerToRoom(indexRoom, player);
+      if (!room) {
+        this.sendError(ws, 'Room not found');
+        return;
+      }
 
-    if (room.players.length === 2) {
-      const game = this.gameService.createFromRoom(room);
-      this.roomService.removeRoom(room.roomId);
-    }
+      if (room.players.length === 2) {
+        const game = this.gameService.createFromRoom(room);
+        this.roomService.removeRoom(room.roomId);
+      }
 
-    this.roomService.broadcastRoomUpdate();
+      this.roomService.broadcastRoomUpdate();
+    } catch (error) {
+      this.sendError(
+        ws,
+        error instanceof Error ? error.message : 'Failed to join room',
+      );
+    }
   }
 
   private handleAddShips(ws: WebSocket, message: WSMessage): void {
@@ -173,14 +169,6 @@ export class MessageHandler {
   }
 
   private sendError(ws: WebSocket, error: string): void {
-    ws.send(
-      JSON.stringify({
-        type: 'error',
-        data: JSON.stringify({
-          error: error,
-        }),
-        id: 0,
-      }),
-    );
+    MessageFormatter.sendMessage(ws, 'error', { error });
   }
 }

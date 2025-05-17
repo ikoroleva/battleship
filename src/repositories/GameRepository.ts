@@ -1,4 +1,4 @@
-import { Game, Room, Ship, Player, GamePlayerState } from '../types/types';
+import { Game, Room, Ship, GamePlayerState } from '../types/types';
 
 export class GameRepository {
   private static instance: GameRepository;
@@ -113,19 +113,19 @@ export class GameRepository {
   }
 
   private isShipHit(ship: Ship, x: number, y: number): boolean {
-    if (!ship.direction) {
+    if (ship.direction) {
       // horizontal
-      return (
-        y === ship.position.y &&
-        x >= ship.position.x &&
-        x < ship.position.x + ship.length
-      );
-    } else {
-      // vertical
       return (
         x === ship.position.x &&
         y >= ship.position.y &&
         y < ship.position.y + ship.length
+      );
+    } else {
+      // vertical
+      return (
+        y === ship.position.y &&
+        x >= ship.position.x &&
+        x < ship.position.x + ship.length
       );
     }
   }

@@ -1,6 +1,7 @@
-import { Player, WSMessage } from '../types/types';
+import { Player } from '../types/types';
 import { WebSocket } from 'ws';
-import { PlayerRepository } from '../repositories/players';
+import { PlayerRepository } from '../repositories/PlayerRepository';
+import { MessageFormatter } from '../utils/MessageFormatter';
 
 export class PlayerService {
   private playerRepo: PlayerRepository;
@@ -47,8 +48,13 @@ export class PlayerService {
     return this.playerRepo.getWinners();
   }
 
-  broadcastMessage(message: string): void {
-    this.playerRepo.broadcast(message);
+  broadcastMessage(type: string, data: any): void {
+    const players = this.playerRepo.getAllPlayers();
+    MessageFormatter.sendToSockets(
+      players.map((p) => p.socket),
+      type,
+      data,
+    );
   }
 
   getPlayerIndex(name: string): number {
